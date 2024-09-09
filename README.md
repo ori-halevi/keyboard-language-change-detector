@@ -21,23 +21,6 @@ It utilizes Windows API functions via `ctypes` to interact with the registry and
 - Python 3.12 or later
 - Windows OS
 
-## Usage
-
-1. Clone the repository:
-    ```bash
-    git clone https://github.com/ori-halevi/keyboard-layout-change-monitor.git
-    ```
-
-2. Navigate to the project directory:
-    ```bash
-    cd keyboard-layout-change-monitor
-    ```
-
-3. Run the script:
-    ```bash
-    python monitor.py
-    ```
-
 ## Code Explanation
 
 - **Registry Monitoring**: The script uses Windows API functions to monitor the registry key for changes.
