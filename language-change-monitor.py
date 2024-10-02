@@ -15,6 +15,7 @@ for changes.
 
 Note: The script uses Windows API functions via ctypes to interact with the registry and handle system events.
 """
+from __future__ import annotations
 
 import ctypes
 import winreg
@@ -67,7 +68,7 @@ GetForegroundWindow = user32.GetForegroundWindow
 GetForegroundWindow.restype = ctypes.c_void_p
 
 
-def get_current_language():
+def get_current_language() -> str:
     """
     Returns the current keyboard layout language of the foreground window.
     """
@@ -83,10 +84,12 @@ def get_current_language():
         return None
 
 
-def start_monitor(duration=-1):
+def start_monitor_language_in_registry_key(duration: int = -1, user_function: callable = None) -> str | bool | None:
     """
     Monitors changes to a specific registry key and logs when changes are detected.
     :param duration: How long to wait for changes in milliseconds. If negative (-1) or empty - it will wait forever.
+    :param user_function: An optional user-defined function to execute when a change is detected.
+    :return: The current keyboard language if a change is detected; False if no change occurred; None in case of error.
     """
     event = None
     try:
@@ -115,27 +118,31 @@ def start_monitor(duration=-1):
             wait_result = WaitForSingleObject(event, duration)
             if wait_result == 0:  # Event occurred
                 logging.info("Registry key has been modified.")
-                result = RegNotifyChangeKeyValue(
-                    reg_key_handle,
-                    False,
-                    REG_NOTIFY_CHANGE_LAST_SET,
-                    event,
-                    True
-                )
-                if result != 0:
-                    logging.error(f"Error re-registering registry change notification. Error code: {ctypes.get_last_error()}")
 
-            return get_current_language()
+                # Here the user function will run (if entered)
+                if user_function is not None and callable(user_function):
+                    user_function()
+                    logging.info("Function executed successfully.")
+
+                return get_current_language()
+            else:
+                return False
 
     except KeyboardInterrupt:
         logging.info("Stopped monitoring.")
+    except Exception as e:
+        logging.error("Unexpected error:", e)
     finally:
         if event:
             kernel32.CloseHandle(event)
 
 
 if __name__ == "__main__":
+
+    def example():
+        print("Hello")
+
     old_lang = get_current_language()
     print(f"Current language: {old_lang}")
-    new_lang = start_monitor(5000)  # Start monitoring registry key changes
-    print(f"New language after monitoring: {new_lang}")
+    new_lang = start_monitor_language_in_registry_key(duration=2000, user_function=example)  # Start monitoring registry key changes
+    print(f"Result after monitoring: {new_lang}")
